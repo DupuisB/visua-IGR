@@ -59,11 +59,37 @@ git push -u origin main
 3. Make sure your repository contains:
    - `app.py` - Main Streamlit application
    - `requirements.txt` - Dependencies
-   - `Procfile` - Specifies the command to run the app
+   - `Procfile` - Command to run the app (web: streamlit run app.py --server.port=$PORT)
+   - `runtime.txt` - Python version (python-3.9.18)
+   - `setup.sh` - Streamlit configuration
 
-4. Deploy your app:
+4. Verify buildpacks:
+   - Go to "Settings" tab in Heroku
+   - Under "Buildpacks", make sure "heroku/python" is added
+   - If not, click "Add buildpack" and select Python
+
+5. Environment variables:
+   - In Heroku, go to "Settings" > "Config Vars"
+   - Add any environment variables needed by your app
+
+6. Deploy:
    - Click "Deploy Branch" in the Heroku dashboard
    - Once deployed, click "Open App" to view your application
+
+### Troubleshooting deployment
+
+If you encounter the H14 error "No web processes running":
+
+1. Verify your Procfile has the correct format (no comments, proper syntax)
+2. Check logs to see why the process isn't starting:
+```bash
+heroku logs --tail
+```
+3. Make sure all dependencies are specified in requirements.txt
+4. Try restarting the dynos:
+```bash
+heroku ps:scale web=1
+```
 
 ### Data files
 Make sure all data files (`dpt2020.csv` and `departements-version-simplifiee.geojson`) are included in your repository so they can be accessed by the deployed application.

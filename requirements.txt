@@ -3,3 +3,8 @@ pandas==2.0.3
 altair==5.1.1
 geopandas==0.13.2
 numpy==1.25.2
+matplotlib==3.7.2
+pyproj==3.6.0
+shapely==2.0.1
+fiona==1.9.4
+rtree==1.0.1

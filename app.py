@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import geopandas as gpd
+import os
+
+# Print debugging information
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in directory: {os.listdir('.')}")
 
 # Set page configuration
 st.set_page_config(
@@ -14,20 +19,33 @@ st.set_page_config(
 # Load data once for all visualizations
 @st.cache_data
 def load_data():
-    names = pd.read_csv("dpt2020.csv", sep=";")
-    names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
-    names.drop(names[names.dpt == 'XX'].index, inplace=True)
-    names['annais'] = pd.to_numeric(names['annais'], errors='coerce')
-    names['nombre'] = pd.to_numeric(names['nombre'], errors='coerce')
-    return names.dropna(subset=['nombre', 'annais'])
+    try:
+        names = pd.read_csv("dpt2020.csv", sep=";")
+        names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
+        names.drop(names[names.dpt == 'XX'].index, inplace=True)
+        names['annais'] = pd.to_numeric(names['annais'], errors='coerce')
+        names['nombre'] = pd.to_numeric(names['nombre'], errors='coerce')
+        return names.dropna(subset=['nombre', 'annais'])
+    except Exception as e:
+        st.error(f"Error loading names data: {e}")
+        return pd.DataFrame()
 
 @st.cache_data
 def load_geo_data():
-    return gpd.read_file('departements-version-simplifiee.geojson')
+    try:
+        return gpd.read_file('departements-version-simplifiee.geojson')
+    except Exception as e:
+        st.error(f"Error loading geo data: {e}")
+        return gpd.GeoDataFrame()
 
 # Load data
-df = load_data()
-depts = load_geo_data()
+try:
+    df = load_data()
+    depts = load_geo_data()
+except Exception as e:
+    st.error(f"Error in data loading: {e}")
+    df = pd.DataFrame()
+    depts = gpd.GeoDataFrame()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -39,7 +57,11 @@ alt.data_transformers.enable('json')
 # Home page
 if page == "Home":
     st.title("French Baby Names Visualization Dashboard")
-    st.image("media/visua1-version1.0.gif", use_column_width=True)
+    
+    try:
+        st.image("media/visua1-version1.0.gif", use_column_width=True)
+    except:
+        st.write("Image could not be loaded. Please check media path.")
     
     st.markdown("""
     This dashboard provides three interactive visualizations for exploring French baby name data:
@@ -252,3 +274,8 @@ elif page == "Name Gender Distribution":
         st.dataframe(display_data)
     else:
         st.write(f"No data available for name '{chosen_name}' in the selected department.")
+
+# Health check endpoint
+elif page == "Health Check":
+    st.title("Health Check")
+    st.write("The application is running smoothly!")
