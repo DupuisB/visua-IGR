@@ -1,16 +1,16 @@
 import streamlit as st
 import os
 
-# Basic app to test deployment
-st.title("French Baby Names Dashboard")
+# Basic test app
+st.title("French Baby Names - Test App")
 st.write("Testing Heroku deployment...")
 
-# Show environment info for debugging
-st.write(f"Python version: {os.environ.get('PYTHON_VERSION', 'Not set')}")
-st.write(f"PORT: {os.environ.get('PORT', 'Not set')}")
-st.write(f"Current directory: {os.getcwd()}")
-st.write(f"Files in directory: {sorted(os.listdir('.'))}")
+# Show environment info
+st.write("Environment information:")
+st.code(f"Current directory: {os.getcwd()}\nFiles: {os.listdir('.')}")
 
+# Simple confirmation
+st.success("App is running!")
 # Simple interface
 st.success("If you can see this, the app is running correctly!")
 def load_data():
