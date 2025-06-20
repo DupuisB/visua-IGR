@@ -4,10 +4,6 @@ import altair as alt
 import geopandas as gpd
 import os
 
-# Print debugging information
-print(f"Current working directory: {os.getcwd()}")
-print(f"Files in directory: {os.listdir('.')}")
-
 # Set page configuration
 st.set_page_config(
     page_title="French Baby Names Visualization",
@@ -16,68 +12,72 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Print environment for debugging
+st.sidebar.write(f"Python version: {os.environ.get('PYTHON_VERSION', 'unknown')}")
+st.sidebar.write(f"Current directory: {os.getcwd()}")
+st.sidebar.write(f"Files in directory: {sorted(os.listdir('.'))}")
+
 # Load data once for all visualizations
 @st.cache_data
 def load_data():
     try:
         names = pd.read_csv("dpt2020.csv", sep=";")
+        st.sidebar.success("Data loaded successfully")
         names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
         names.drop(names[names.dpt == 'XX'].index, inplace=True)
         names['annais'] = pd.to_numeric(names['annais'], errors='coerce')
         names['nombre'] = pd.to_numeric(names['nombre'], errors='coerce')
         return names.dropna(subset=['nombre', 'annais'])
     except Exception as e:
-        st.error(f"Error loading names data: {e}")
-        return pd.DataFrame()
+        st.sidebar.error(f"Error loading data: {str(e)}")
+        # Create dummy data for testing
+        return pd.DataFrame({
+            'dpt': ['75', '69', '13'], 
+            'preusuel': ['Jean', 'Marie', 'Pierre'],
+            'annais': [2000, 2000, 2000],
+            'nombre': [100, 200, 150],
+            'sexe': [1, 2, 1]
+        })
 
 @st.cache_data
 def load_geo_data():
     try:
         return gpd.read_file('departements-version-simplifiee.geojson')
     except Exception as e:
-        st.error(f"Error loading geo data: {e}")
+        st.sidebar.error(f"Error loading geo data: {str(e)}")
+        # Return empty GeoDataFrame
         return gpd.GeoDataFrame()
-
-# Load data
-try:
-    df = load_data()
-    depts = load_geo_data()
-except Exception as e:
-    st.error(f"Error in data loading: {e}")
-    df = pd.DataFrame()
-    depts = gpd.GeoDataFrame()
-
-# Sidebar for navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Choose Visualization", ["Home", "Top Names Over Time", "Regional Name Map", "Name Gender Distribution"])
 
 # Enable Altair to handle larger datasets
 alt.data_transformers.enable('json')
 
-# Home page
-if page == "Home":
-    st.title("French Baby Names Visualization Dashboard")
-    
-    try:
-        st.image("media/visua1-version1.0.gif", use_column_width=True)
-    except:
-        st.write("Image could not be loaded. Please check media path.")
-    
-    st.markdown("""
-    This dashboard provides three interactive visualizations for exploring French baby name data:
-    
-    1. **Top Names Over Time**: Explore the most popular baby names in France from 1940 to 2020 using an interactive year slider.
-    
-    2. **Regional Name Map**: Discover which names are most popular in different French departments using an interactive map.
-    
-    3. **Name Gender Distribution**: Analyze how the gender distribution for specific names has changed over time in different regions.
-    
-    Use the sidebar to navigate between visualizations.
-    """)
+# Main application
+st.title("French Baby Names Dashboard")
+st.write("Explore baby name trends in France")
 
-# Visualization 1: Top Names Over Time
-elif page == "Top Names Over Time":
-    st.title("Top Baby Names Over Time")
+# Simple placeholder content
+st.write("Application is running! 🎉")
+st.write("This is a basic version to confirm deployment is working.")
+
+# Try to load data
+try:
+    df = load_data()
+    st.write(f"Successfully loaded {len(df)} name records")
+    st.write("Sample data:")
+    st.write(df.head())
+except Exception as e:
+    st.error(f"Error initializing data: {str(e)}")
+
+# Version information
+st.sidebar.title("Version Info")
+st.sidebar.write("Streamlit version:", st.__version__)
+st.sidebar.write("Pandas version:", pd.__version__)
+st.sidebar.write("Altair version:", alt.__version__)
+st.sidebar.write("GeoPandas version:", gpd.__version__)
+
+# Footer
+st.markdown("---")
+st.markdown("French Baby Names Visualization - Deployment Test")
     st.write("Use the slider to explore the top 15 baby names for each year")
     
     # Group by year and name, sum the counts across all departments and genders
