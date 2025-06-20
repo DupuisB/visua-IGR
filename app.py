@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import geopandas as gpd
-import os
 
 # Set page configuration
 st.set_page_config(
@@ -12,72 +11,54 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Print environment for debugging
-st.sidebar.write(f"Python version: {os.environ.get('PYTHON_VERSION', 'unknown')}")
-st.sidebar.write(f"Current directory: {os.getcwd()}")
-st.sidebar.write(f"Files in directory: {sorted(os.listdir('.'))}")
-
 # Load data once for all visualizations
 @st.cache_data
 def load_data():
-    try:
-        names = pd.read_csv("dpt2020.csv", sep=";")
-        st.sidebar.success("Data loaded successfully")
-        names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
-        names.drop(names[names.dpt == 'XX'].index, inplace=True)
-        names['annais'] = pd.to_numeric(names['annais'], errors='coerce')
-        names['nombre'] = pd.to_numeric(names['nombre'], errors='coerce')
-        return names.dropna(subset=['nombre', 'annais'])
-    except Exception as e:
-        st.sidebar.error(f"Error loading data: {str(e)}")
-        # Create dummy data for testing
-        return pd.DataFrame({
-            'dpt': ['75', '69', '13'], 
-            'preusuel': ['Jean', 'Marie', 'Pierre'],
-            'annais': [2000, 2000, 2000],
-            'nombre': [100, 200, 150],
-            'sexe': [1, 2, 1]
-        })
+    names = pd.read_csv("dpt2020.csv", sep=";")
+    names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
+    names.drop(names[names.dpt == 'XX'].index, inplace=True)
+    names['annais'] = pd.to_numeric(names['annais'], errors='coerce')
+    names['nombre'] = pd.to_numeric(names['nombre'], errors='coerce')
+    return names.dropna(subset=['nombre', 'annais'])
 
 @st.cache_data
 def load_geo_data():
-    try:
-        return gpd.read_file('departements-version-simplifiee.geojson')
-    except Exception as e:
-        st.sidebar.error(f"Error loading geo data: {str(e)}")
-        # Return empty GeoDataFrame
-        return gpd.GeoDataFrame()
+    return gpd.read_file('departements-version-simplifiee.geojson')
 
 # Enable Altair to handle larger datasets
 alt.data_transformers.enable('json')
 
-# Main application
-st.title("French Baby Names Dashboard")
-st.write("Explore baby name trends in France")
+# Sidebar for navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Choose Visualization", ["Home", "Top Names Over Time", "Regional Name Map", "Name Gender Distribution"])
 
-# Simple placeholder content
-st.write("Application is running! 🎉")
-st.write("This is a basic version to confirm deployment is working.")
-
-# Try to load data
+# Load data
 try:
     df = load_data()
-    st.write(f"Successfully loaded {len(df)} name records")
-    st.write("Sample data:")
-    st.write(df.head())
+    depts = load_geo_data()
 except Exception as e:
-    st.error(f"Error initializing data: {str(e)}")
+    st.error(f"Error loading data: {str(e)}")
+    st.stop()
 
-# Version information
-st.sidebar.title("Version Info")
-st.sidebar.write("Streamlit version:", st.__version__)
-st.sidebar.write("Pandas version:", pd.__version__)
-st.sidebar.write("Altair version:", alt.__version__)
-st.sidebar.write("GeoPandas version:", gpd.__version__)
+# Home page
+if page == "Home":
+    st.title("French Baby Names Visualization Dashboard")
+    
+    st.markdown("""
+    This dashboard provides three interactive visualizations for exploring French baby name data:
+    
+    1. **Top Names Over Time**: Explore the most popular baby names in France from 1940 to 2020 using an interactive year slider.
+    
+    2. **Regional Name Map**: Discover which names are most popular in different French departments using an interactive map.
+    
+    3. **Name Gender Distribution**: Analyze how the gender distribution for specific names has changed over time in different regions.
+    
+    Use the sidebar to navigate between visualizations.
+    """)
 
-# Footer
-st.markdown("---")
-st.markdown("French Baby Names Visualization - Deployment Test")
+# Visualization 1: Top Names Over Time
+elif page == "Top Names Over Time":
+    st.title("Top Baby Names Over Time")
     st.write("Use the slider to explore the top 15 baby names for each year")
     
     # Group by year and name, sum the counts across all departments and genders
@@ -131,11 +112,8 @@ st.markdown("French Baby Names Visualization - Deployment Test")
         text=alt.Text('nombre:Q', format='.0f')
     )
     
-    # Combine charts
-    final_chart = (chart + text)
-    
     # Display the chart
-    st.altair_chart(final_chart, use_container_width=True)
+    st.altair_chart(chart + text, use_container_width=True)
 
 # Visualization 2: Regional Name Map
 elif page == "Regional Name Map":
@@ -274,7 +252,27 @@ elif page == "Name Gender Distribution":
         st.dataframe(display_data)
     else:
         st.write(f"No data available for name '{chosen_name}' in the selected department.")
-
+        
+        chart = alt.Chart(plot_df).mark_line(point=True).encode(
+            x=alt.X('annais:O', title='Year'),
+            y=alt.Y('Percentage:Q', title='Percentage (%)', scale=alt.Scale(domain=[0, 100])),
+            color=alt.Color('Sex:N', scale=alt.Scale(domain=['Girls', 'Boys'], 
+                                                  range=['pink', 'lightblue'])),
+            tooltip=tooltip
+        ).properties(
+            title=title_str,
+            width=700,
+            height=400
+        ).interactive()
+        
+        st.altair_chart(chart, use_container_width=True)
+        
+        # Display the data table
+        st.subheader("Data")
+        display_data = pivot[['Girls', 'Boys', 'Total', '% Girls', '% Boys']].reset_index()
+        display_data = display_data.sort_values('annais', ascending=False)
+        st.dataframe(display_data)
+        
 # Health check endpoint
 elif page == "Health Check":
     st.title("Health Check")

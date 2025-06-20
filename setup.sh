@@ -2,10 +2,10 @@ mkdir -p ~/.streamlit/
 
 echo "\
 [server]\n\
-headless = true\n\
 port = $PORT\n\
 enableCORS = false\n\
-enableXsrfProtection = false\n\
+headless = true\n\
+" > ~/.streamlit/config.toml
 " > ~/.streamlit/config.toml
 headless = true\n\
 enableCORS = false\n\
