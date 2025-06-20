@@ -1,18 +1,18 @@
 import streamlit as st
-import pandas as pd
-import altair as alt
-import geopandas as gpd
+import os
 
-# Set page configuration
-st.set_page_config(
-    page_title="French Baby Names Visualization",
-    page_icon="👶",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Basic app to test deployment
+st.title("French Baby Names Dashboard")
+st.write("Testing Heroku deployment...")
 
-# Load data once for all visualizations
-@st.cache_data
+# Show environment info for debugging
+st.write(f"Python version: {os.environ.get('PYTHON_VERSION', 'Not set')}")
+st.write(f"PORT: {os.environ.get('PORT', 'Not set')}")
+st.write(f"Current directory: {os.getcwd()}")
+st.write(f"Files in directory: {sorted(os.listdir('.'))}")
+
+# Simple interface
+st.success("If you can see this, the app is running correctly!")
 def load_data():
     names = pd.read_csv("dpt2020.csv", sep=";")
     names.drop(names[names.preusuel == '_PRENOMS_RARES'].index, inplace=True)
@@ -272,7 +272,7 @@ elif page == "Name Gender Distribution":
         display_data = pivot[['Girls', 'Boys', 'Total', '% Girls', '% Boys']].reset_index()
         display_data = display_data.sort_values('annais', ascending=False)
         st.dataframe(display_data)
-        
+
 # Health check endpoint
 elif page == "Health Check":
     st.title("Health Check")
